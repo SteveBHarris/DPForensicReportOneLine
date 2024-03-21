@@ -51,14 +51,3 @@ V1.0.0 - Initial Release
 		Err4 - More headers than data.
 		Err5 - Non-numeric data in column A. (Column A should always contain a S.No)
 		
-			* 40 columns total.
-	* Parses up to the default 26 header rows (S.No, Start Time, End Time, Device IP Address, Threat Category, Attack Name, Policy Name, Action, Attack ID, Source IP Address, Source Port, Destination IP Address, Destination Port, Direction, Protocol, Radware ID, Duration, Total Packets Dropped, Packet Type, Total Mbits Dropped, Max pps, Max bps, Physical Port, Risk, VLAN Tag, Footprint)
-	* Parses and includes additional rows for Footprint, State, Source IP, Source Port, Destination IP, Destination Port
-	* Parses and includes SAMPLE DETAILS: lines.
-	* Auto adjusts width and height of cells.
-	* Fills alternate cells with faint color for better readability.
-	* Applies borders for better readability.
-
-	Full list of output columns: S.No, Start Time, End Time, Device IP Address, Threat Category, Attack Name, Policy Name, Action, Attack ID, Source IP Address, Source Port, Destination IP Address, Destination Port, Direction, Protocol, Radware ID, Duration, Total Packets Dropped, Packet Type, Total Mbits Dropped, Max pps, Max bps, Physical Port, Risk, DetailFootprint, State, Source Port, Destination IP, Sample Source IPs, Sample Source Ports, Sample Dest IPs, Sample Dest Ports, Sample Physical Ports, Sample Protocol
-
-	If you would like additional detail to be included in the output, please contact Steven.Harris@radware.com
