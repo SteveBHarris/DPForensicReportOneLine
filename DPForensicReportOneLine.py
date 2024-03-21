@@ -29,8 +29,8 @@ def rowSearch(rowStr,entry):
         return(f'')
 
 class clsEntry:
-    def __init__(self,rawEntry):
-        #Grab columns a-z from the second row of the entry
+    def __init__(self,rawEntry,startLine=1):
+        #Grab columns a-z from the second row of the entry.
         self.first26 = []
         for i in range(26):
             self.first26.append('')
@@ -40,16 +40,16 @@ class clsEntry:
             if line.startswith("S.No,"):
                 headerCount += 1
         if headerCount > 1:
-            print("Warning: Corrupt entry. Multiple headers in same entry.")
-            self.first26[0] = "Err1"
+            print(f"Warning: Corrupt entry at line {startLine}. Multiple headers in same entry.")
+            self.first26[0] = f"Err1:{startLine}"
             #self.first26[0] = "Multiple in same entry:"
         elif headerCount == 0:
-            print("Warning: Corrupt entry. Header line is missing.")
-            self.first26[0] = "Err2"
+            print(f"Warning: Corrupt entry at line {startLine}. Header line is missing.")
+            self.first26[0] = f"Err2:{startLine}"
             #self.first26[0] = "Header line missing"
         if len(lines) < 2:
-            print("Corrupt entry detected. <2 lines in entry.")
-            self.error = "Err3"
+            print(f"Corrupt entry detected at line {startLine}. <2 lines in entry.")
+            self.error = f"Err3:{startLine}"
             return
         
         allMetrics = ["S.No","Start Time","End Time","Device IP Address","Threat Category","Attack Name","Policy Name","Action","Attack ID","Source IP Address","Source Port","Destination IP Address","Destination Port","Direction","Protocol","Radware ID","Duration","Total Packets Dropped","Packet Type","Total Mbits Dropped","Max pps","Max bps","Physical Port","Risk","VLAN Tag","Footprint"]
@@ -60,19 +60,19 @@ class clsEntry:
             reader = csv.reader(io.StringIO(match[1]))
             data = next(reader)
             if len(headers) > len(data): #We can't have more headers than entries
-                print("Warning: More headers than data:")
+                print(f"Warning: Corrupt entry at line {startLine}. More headers than data:")
                 print(f'    Headers: {headers} \n Data: {data}')
-                self.first26[0] = '\n'.join(["Err4",self.first26[0]]).strip() 
+                self.first26[0] = '\n'.join([f"Err4:{startLine}",self.first26[0]]).strip() 
             try:
                 if not data[0].isnumeric():
-                    self.first26[0].value = 'Err5'
+                    self.first26[0].value = f'Err5:{startLine}'
                     raise ValueError("Bad data")
                 for i, header in enumerate(headers):
                     if data[i] != '':
                         index = allMetrics.index(header)
                         self.first26[index] = '\n'.join([self.first26[index],data[i]]).strip()
             except:
-                print(f"Bad Data detected when parsing entry: Headers: {headers} Data: {data}")
+                print(f"Bad Data detected when parsing entry at line {startLine}: Headers: {headers} Data: {data}")
         #Parse specific rows
         self.footprint = rowSearch("Footprint,",rawEntry).strip('"')
         self.state = rowSearch("State,",rawEntry)        
@@ -155,15 +155,17 @@ def processData(rawData):
     print(f"{len(rawEntries)} entries found.")
     #Loop through each item of the array, processing the data within and creating a row in our output sheet.
     curRow = 2
+    curLine=1
     for rawEntry in rawEntries:
         if len(rawEntry) > 1:
             #Populate entry with the desired data. See class clsEntry.
-            entry = clsEntry(rawEntry)
-
+            entry = clsEntry(rawEntry, curLine)
+            
             if hasattr(entry,'error'):
                 sheet.cell(row=curRow,column=1).value = entry.error
                 curRow += 1
                 continue
+            curLine += len(rawEntry.split('\n')) + 1
             #For troubleshooting, enable the following rows:
             #print(f'Processing Attack ID: {entry.first26[8]} S.No: {entry.first26}')
             #print(f'=============\n{rawEntry}\n==================')
