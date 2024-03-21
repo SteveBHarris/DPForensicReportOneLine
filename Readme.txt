@@ -26,22 +26,7 @@
 	3. View the output files under .\output\<filename>.xlsx
 
 	Note: The DefensePro will occasionally produce corrupt entries in the report.csv file. This script handles them as best it can. The word 'err' will be inserted in the beginning of the first column when an error is detected in that line.
-	
-# Version control
 
-V1.0.0 - Initial Release
-	* 40 columns total.
-	* Parses up to the default 26 header rows (S.No, Start Time, End Time, Device IP Address, Threat Category, Attack Name, Policy Name, Action, Attack ID, Source IP Address, Source Port, Destination IP Address, Destination Port, Direction, Protocol, Radware ID, Duration, Total Packets Dropped, Packet Type, Total Mbits Dropped, Max pps, Max bps, Physical Port, Risk, VLAN Tag, Footprint)
-	* Parses and includes additional rows for Footprint, State, Source IP, Source Port, Destination IP, Destination Port
-	* Parses and includes SAMPLE DETAILS: lines.
-	* Auto adjusts width and height of cells.
-	* Fills alternate cells with faint color for better readability.
-	* Applies borders for better readability.
-
-	Full list of output columns: S.No, Start Time, End Time, Device IP Address, Threat Category, Attack Name, Policy Name, Action, Attack ID, Source IP Address, Source Port, Destination IP Address, Destination Port, Direction, Protocol, Radware ID, Duration, Total Packets Dropped, Packet Type, Total Mbits Dropped, Max pps, Max bps, Physical Port, Risk, DetailFootprint, State, Source Port, Destination IP, Sample Source IPs, Sample Source Ports, Sample Dest IPs, Sample Dest Ports, Sample Physical Ports, Sample Protocol
-
-	If you would like additional detail to be included in the output, please contact Steven.Harris@radware.com
-	
 # Error handling
 	The DefensePro is not perfect at outputting this data. Occasionally entries in the .csv file will be out of order, overlap adjacent entries, or be missing critical data entirely. The script will do it's best to process the data as normal, but will add 'Err#' to the top of the column A cell for the row.
 	Here is a list of error #s and what they indicate:
@@ -50,4 +35,20 @@ V1.0.0 - Initial Release
 		Err3 - <2 lines in entry.
 		Err4 - More headers than data.
 		Err5 - Non-numeric data in column A. (Column A should always contain a S.No)
+
+# Version control
+	V1.0.0 - Initial Release
+		* 40 columns total.
+		* Parses up to the default 26 header rows (S.No, Start Time, End Time, Device IP Address, Threat Category, Attack Name, Policy Name, Action, Attack ID, Source IP Address, Source Port, Destination IP Address, Destination Port, Direction, Protocol, Radware ID, Duration, Total Packets Dropped, Packet Type, Total Mbits Dropped, Max pps, Max bps, Physical Port, Risk, VLAN Tag, Footprint)
+		* Parses and includes additional rows for Footprint, State, Source IP, Source Port, Destination IP, Destination Port
+		* Parses and includes SAMPLE DETAILS: lines.
+		* Auto adjusts width and height of cells.
+		* Fills alternate cells with faint color for better readability.
+		* Applies borders for better readability.
+
+		Full list of output columns: S.No, Start Time, End Time, Device IP Address, Threat Category, Attack Name, Policy Name, Action, Attack ID, Source IP Address, Source Port, Destination IP Address, Destination Port, Direction, Protocol, Radware ID, Duration, Total Packets Dropped, Packet Type, Total Mbits Dropped, Max pps, Max bps, Physical Port, Risk, DetailFootprint, State, Source Port, Destination IP, Sample Source IPs, Sample Source Ports, Sample Dest IPs, Sample Dest Ports, Sample Physical Ports, Sample Protocol
+
+		If you would like additional detail to be included in the output, please contact Steven.Harris@radware.com
+	
+
 		
