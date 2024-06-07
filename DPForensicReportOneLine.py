@@ -1,12 +1,14 @@
 #DefensePro forensic with details to one line
 #Created and maintained by Steve Harris - Steven.Harris@radware.com
 #Date Created: 14 March 2024
-#Last Updated: 15 March 2024
-#version 1.0
+#Last Updated: 6 June 2024
+#version 1.1
 import os
 import csv
 import io
 import re
+from datetime import datetime
+
 try:
     import openpyxl
 except ImportError:
@@ -250,6 +252,20 @@ def processData(rawData):
                                                                                         top = openpyxl.styles.borders.Side(style = 'thin'),
                                                                                         bottom = openpyxl.styles.borders.Side(style = 'thin')
                                                                                         )
+            
+                #sheet.cell(row=curRow,column=i).number_format = "0.00"
+            for i in [2,3]:
+                try:
+                    #Columns B and C are dates. Lets convert it to a proper date format.
+                    cell = sheet.cell(row=curRow,column=i)
+                    # Parse the date time string to a datetime object
+                    datetime_obj = datetime.strptime(cell.value, "%m.%d.%Y %H:%M:%S")
+                    # Convert the datetime object to the desired format
+                    cell.number_format = "YYYY-MM-DD HH:MM:SS"
+                    cell.value = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                except:
+                    pass
         if (curRow - 1) % 100 == 0:
             print(f"Processed {curRow - 1} entries", end='\r', flush=True)
         curRow += 1
@@ -272,6 +288,14 @@ def processData(rawData):
             except Exception as e:
                 print(e)
                 pass
+            #for i in range(1,41):
+            #    c = sheet.cell(row=curRow,column=i)
+            if type(cell.value) is str:
+                if cell.value.replace(".", "", 1).isnumeric():
+                    cell.value = float(cell.value)
+        
+        
+
         if hideEmptyColumns == False or cellsWithData > 1:
             adjusted_width = (max_length + 2) * 1.01  # Adjust the multiplier as needed
             if adjusted_width > maxWidth: #maxWidth set near the top of the script.
