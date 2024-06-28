@@ -1,7 +1,7 @@
-#DefensePro forensic with details to one line
+#Convert DefensePro 'forensic with details' to one line per entry
 #Date Created: 14 March 2024
-#Last Updated: 15 March 2024
-#version 1.0
+#Last Updated: 6 June 2024
+#version 1.2
 
 # Owner/Maintainer
 
@@ -9,7 +9,7 @@
 
 # About
 
-	This script parses a directory full of DefensePro Forensic Report .csv files. It will take the multiline default format and convert it to a single line per event excel file excel file. It combines Source IP, Destination, IP, Ports, etc, removes duplicates and sorts them within their cell.
+	This script parses a directory full of DefensePro Forensic Report .csv files. It will take the multiline default format and convert it to a single line per event excel file. It combines Source IP, Destination, IP, Ports, etc, removes duplicates and sorts them within their cell.
 
 	Input: Place .csv files in the .\input\ folder. 
 	Output: .\output\<input filename>.xlsx
@@ -38,6 +38,10 @@
 		Err5 - Non-numeric data in column A. (Column A should always contain a S.No)
 
 # Version control
+	V1.2 - CC10.5 Update
+		* Included 'Total Packets' and 'Total Mbits' columns from CC10.5. These columns were added in the middle of the output document. Some columns will have shifted to the right as a result.
+		* Multiple modifications to make it easier to add additional new columns in the future.
+		* Added 'Detail' to the header of several columns for better description and to avoid having multiple headers with the same name.
 	V1.1 - Output improvements
 		* Numeric cells are now correctly formatted as numbers.
 		* Dates in columns B and C are now properly formatted as dates in Excel. 

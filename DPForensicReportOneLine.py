@@ -1,12 +1,13 @@
-#DefensePro forensic with details to one line
+#Convert DefensePro forensic with details to one line per entry
 #Created and maintained by Steve Harris - Steven.Harris@radware.com
 #Date Created: 14 March 2024
-#Last Updated: 6 June 2024
-#version 1.1
+#Last Updated: 21 June 2024
+#version 1.2
 import os
 import csv
 import io
 import re
+
 from datetime import datetime
 
 try:
@@ -22,20 +23,21 @@ maxWidth=64
 ColorAlternateRows = True
 fillColor = 'F0F0F0F0'
 hideEmptyColumns = True
+DataHeaders = ["S.No","Start Time","End Time","Device IP Address","Threat Category","Attack Name","Policy Name","Action","Attack ID","Source IP Address","Source Port","Destination IP Address","Destination Port","Direction","Protocol","Radware ID","Duration","Total Packets","Total Packets Dropped","Packet Type","Total Mbits","Total Mbits Dropped","Max pps","Max bps","Physical Port","Risk","VLAN Tag","Footprint"]
 
 def rowSearch(rowStr,entry):
     try:
         return re.search(rf'(\n{re.escape(rowStr)})(.+)',entry,re.MULTILINE).group(2)
     except:
         #rowStr not found.
-        return(f'')
+        return('')
 
 class clsEntry:
     def __init__(self,rawEntry,startLine=1):
-        #Grab columns a-z from the second row of the entry.
-        self.first26 = []
-        for i in range(26):
-            self.first26.append('')
+        #Grab header columns from the second row of the entry.
+        self.defaultHeader = []
+        for i in range(len(DataHeaders)):
+            self.defaultHeader.append('')
         lines = rawEntry.splitlines()
         headerCount = 0
         for line in lines:
@@ -43,18 +45,17 @@ class clsEntry:
                 headerCount += 1
         if headerCount > 1:
             print(f"Warning: Corrupt entry at line {startLine}. Multiple headers in same entry.")
-            self.first26[0] = f"Err1:{startLine}"
-            #self.first26[0] = "Multiple in same entry:"
+            self.defaultHeader[0] = f"Err1:{startLine}"
+            #self.defaultHeader[0] = "Multiple in same entry:"
         elif headerCount == 0:
             print(f"Warning: Corrupt entry at line {startLine}. Header line is missing.")
-            self.first26[0] = f"Err2:{startLine}"
-            #self.first26[0] = "Header line missing"
+            self.defaultHeader[0] = f"Err2:{startLine}"
+            #self.defaultHeader[0] = "Header line missing"
         if len(lines) < 2:
             print(f"Corrupt entry detected at line {startLine}. <2 lines in entry.")
             self.error = f"Err3:{startLine}"
             return
         
-        allMetrics = ["S.No","Start Time","End Time","Device IP Address","Threat Category","Attack Name","Policy Name","Action","Attack ID","Source IP Address","Source Port","Destination IP Address","Destination Port","Direction","Protocol","Radware ID","Duration","Total Packets Dropped","Packet Type","Total Mbits Dropped","Max pps","Max bps","Physical Port","Risk","VLAN Tag","Footprint"]
         matches = re.findall(r'(^S.No,.*\n)(.*$)',rawEntry, re.MULTILINE)
         for match in matches:
             reader = csv.reader(io.StringIO(match[0]))
@@ -64,17 +65,18 @@ class clsEntry:
             if len(headers) > len(data): #We can't have more headers than entries
                 print(f"Warning: Corrupt entry at line {startLine}. More headers than data:")
                 print(f'    Headers: {headers} \n Data: {data}')
-                self.first26[0] = '\n'.join([f"Err4:{startLine}",self.first26[0]]).strip() 
+                self.defaultHeader[0] = '\n'.join([f"Err4:{startLine}",self.defaultHeader[0]]).strip() 
             try:
                 if not data[0].isnumeric():
-                    self.first26[0].value = f'Err5:{startLine}'
+                    self.defaultHeader[0].value = f'Err5:{startLine}'
                     raise ValueError("Bad data")
                 for i, header in enumerate(headers):
                     if data[i] != '':
-                        index = allMetrics.index(header)
-                        self.first26[index] = '\n'.join([self.first26[index],data[i]]).strip()
-            except:
+                        index = DataHeaders.index(header)
+                        self.defaultHeader[index] = '\n'.join([self.defaultHeader[index],data[i]]).strip()
+            except Exception as err:
                 print(f"Bad Data detected when parsing entry at line {startLine}: Headers: {headers} Data: {data}")
+                print(f"    Details: ", err)
         #Parse specific rows
         self.footprint = rowSearch("Footprint,",rawEntry).strip('"')
         self.state = rowSearch("State,",rawEntry)        
@@ -97,46 +99,21 @@ class clsEntry:
                 reader = csv.reader(io.StringIO(sampleLine))
                 self.samples.append(next(reader))
         #else:
-        #    print(f"SAMPLE DETAILS not found for id: {self.first26[8]}")
+        #    print(f"SAMPLE DETAILS not found for id: {self.defaultHeader[8]}")
 
 def processData(rawData):
     #Initialize the workbook and sheet.
     wb = openpyxl.Workbook()
     sheet = wb.active
 
-    #Create the header row
-    headers = ["S.No",
-        "Start Time",
-        "End Time",
-        "Device IP Address",
-        "Threat Category",
-        "Attack Name",
-        "Policy Name",
-        "Action",
-        "Attack ID",
-        "Source IP Address",
-        "Source Port",
-        "Destination IP Address",
-        "Destination Port",
-        "Direction",
-        "Protocol",
-        "Radware ID",
-        "Duration",
-        "Total Packets Dropped",
-        "Packet Type",
-        "Total Mbits Dropped",
-        "Max pps",
-        "Max bps",
-        "Physical Port",
-        "Risk",
-        "VLAN Tag",
-        "Footprint",
-        "DetailFootprint",
-        "State",
-        "Source IP",
-        "Source Port",
-        "Destination IP",
-        "Destination Port",
+    #Create the header row. Include all our DataHeaders and add our custom combined columns 
+    sheetHeaders = DataHeaders + [
+        "Detail Footprint",
+        "Detail State",
+        "Detail Source IP",
+        "Detail Source Port",
+        "Detail Destination IP",
+        "Detail Destination Port",
         "Sample Source IPs",
         "Sample Source Ports",
         "Sample Dest IPs",
@@ -145,7 +122,8 @@ def processData(rawData):
         "Sample Vlan Tags",
         "Sample MPLS RD",
         "Sample Protocol"]
-    sheet.append(headers)
+    print(sheetHeaders)
+    sheet.append(sheetHeaders)
     
     #Make the headers bold
     for cell in sheet["1:1"]:
@@ -169,40 +147,40 @@ def processData(rawData):
                 continue
             curLine += len(rawEntry.split('\n')) + 1
             #For troubleshooting, enable the following rows:
-            #print(f'Processing Attack ID: {entry.first26[8]} S.No: {entry.first26}')
+            #print(f'Processing Attack ID: {entry.defaultHeader[8]} S.No: {entry.defaultHeader}')
             #print(f'=============\n{rawEntry}\n==================')
 
             #Populate the cells in our spreadsheet row.
-            for curColumn in range(26): #Populate columns A-Z
-                if entry.first26[curColumn]:
-                    sheet.cell(row=curRow,column=curColumn + 1).value = entry.first26[curColumn]
-            sheet.cell(row=curRow,column=27).value = entry.footprint
-            sheet.cell(row=curRow,column=28).value = entry.state
-            sheet.cell(row=curRow,column=29).value = entry.sIP
-            sheet.cell(row=curRow,column=30).value = entry.sPort
-            sheet.cell(row=curRow,column=31).value = entry.dIP
-            sheet.cell(row=curRow,column=32).value = entry.dPort
+            for curColumn in range(len(DataHeaders)): #Populate columns A-Z
+                if entry.defaultHeader[curColumn]:
+                    sheet.cell(row=curRow,column=curColumn + 1).value = entry.defaultHeader[curColumn]
+            sheet.cell(row=curRow,column=len(DataHeaders)+1).value = entry.footprint
+            sheet.cell(row=curRow,column=len(DataHeaders)+2).value = entry.state
+            sheet.cell(row=curRow,column=len(DataHeaders)+3).value = entry.sIP
+            sheet.cell(row=curRow,column=len(DataHeaders)+4).value = entry.sPort
+            sheet.cell(row=curRow,column=len(DataHeaders)+5).value = entry.dIP
+            sheet.cell(row=curRow,column=len(DataHeaders)+6).value = entry.dPort
             if len(entry.samples) > 0:
                 for sample in entry.samples: 
                     for i in range(8):
                         if len(sample) >= i + 1:
-                            if not sheet.cell(row=curRow,column=33+i).value:
-                                sheet.cell(row=curRow,column=33+i).value = sample[i]
+                            if not sheet.cell(row=curRow,column=len(DataHeaders)+7+i).value:
+                                sheet.cell(row=curRow,column=len(DataHeaders)+7+i).value = sample[i]
                             else:
-                                sheet.cell(row=curRow,column=33+i).value += "\n" + sample[i]
+                                sheet.cell(row=curRow,column=len(DataHeaders)+7+i).value += "\n" + sample[i]
                         else:
-                            sheet.cell(row=curRow,column=33+i).value = '\n'.join(['Error',sheet.cell(row=curRow,column=33+i).value or '']).strip()
+                            sheet.cell(row=curRow,column=len(DataHeaders)+7+i).value = '\n'.join(['Error',sheet.cell(row=curRow,column=33+i).value or '']).strip()
                 #Remove duplicates from the samples we just added.
                 for i in range(8):
-                    curCell = sheet.cell(row=curRow,column=33+i)
+                    curCell = sheet.cell(row=curRow,column=len(DataHeaders)+7+i)
                     curCell.value = '\n'.join(set(curCell.value.split('\n')))
 
             #Replace commas with newlines 
-            for i in [29,30,31,32]:
+            for i in [sheetHeaders.index("Detail Source IP")+1,sheetHeaders.index("Detail Source Port")+1,sheetHeaders.index("Detail Destination IP")+1,sheetHeaders.index("Detail Destination Port")+1]:
                 curCell = sheet.cell(row=curRow,column=i)
                 curCell.value = '\n'.join(sorted(set(curCell.value.split(','))))
 
-            #Sort multiline entries
+            #Sort multiline entries. DataHeaders can't be multiline. The first two Detail headers aren't multiline. Apply to all headers that come 2 after the last dataheader.
             def custom_sort(item):
                 if '.' in item: #IPv4
                     parts = item.split('.')
@@ -219,7 +197,7 @@ def processData(rawData):
                     return [int(item)]
                 else: #Text
                     return [1]
-            for i in range(29,41):#[29,30,31,32,33,34,35,36,37,38,39,40]:
+            for i in range(len(DataHeaders)+4,len(sheetHeaders)+1):#range(29,41):#[29,30,31,32,33,34,35,36,37,38,39,40]:
                 curCell = sheet.cell(row=curRow,column=i)
                 if curCell.value:
                     item = set(curCell.value.strip().split('\n'))
@@ -230,23 +208,22 @@ def processData(rawData):
                             curCell.value = '\n'.join(sorted(item, key=custom_sort))
                         except:
                             print(f"Error sorting column {i}")
-
             #Set all cells to Align top
-            for i in range(1,41):
+            for i in range(1,len(sheetHeaders)+1):
                 sheet.cell(row=curRow,column=i).alignment = openpyxl.styles.Alignment(vertical='top')
             
             #Color alternate rows
             if ColorAlternateRows: #vairable set near at the top of the script
                 if curRow % 2 == 0:
-                    for i in range(1,41):
+                    for i in range(1,len(sheetHeaders)+1):
                         sheet.cell(row=curRow,column=i).fill = openpyxl.styles.PatternFill(start_color=fillColor, end_color=fillColor, fill_type='solid')
 
             #Set wraptext for potential long cells and multiline cells
-            for i in range(1,41):#Old 26,41
+            for i in range(1,len(sheetHeaders)+1):#Old 26,41
                 sheet.cell(row=curRow,column=i).alignment = openpyxl.styles.Alignment(vertical='top', wrapText=True)
             
             #Add cell borders:
-            for i in range(1,41):
+            for i in range(1,len(sheetHeaders)+1):
                 sheet.cell(row=curRow,column=i).border = openpyxl.styles.borders.Border(left = openpyxl.styles.borders.Side(style = 'hair'),
                                                                                         right = openpyxl.styles.borders.Side(style = 'hair'),
                                                                                         top = openpyxl.styles.borders.Side(style = 'thin'),
@@ -254,7 +231,9 @@ def processData(rawData):
                                                                                         )
             
                 #sheet.cell(row=curRow,column=i).number_format = "0.00"
-            for i in [2,3]:
+            
+            #Format date columns as dates
+            for i in [sheetHeaders.index("Start Time")+1,sheetHeaders.index("End Time")+1]:
                 try:
                     #Columns B and C are dates. Lets convert it to a proper date format.
                     cell = sheet.cell(row=curRow,column=i)
@@ -266,6 +245,7 @@ def processData(rawData):
                     
                 except:
                     pass
+        #Output current progress once per hundred entried processed
         if (curRow - 1) % 100 == 0:
             print(f"Processed {curRow - 1} entries", end='\r', flush=True)
         curRow += 1
@@ -288,8 +268,8 @@ def processData(rawData):
             except Exception as e:
                 print(e)
                 pass
-            #for i in range(1,41):
-            #    c = sheet.cell(row=curRow,column=i)
+
+            #Format numeric cells as numbers.
             if type(cell.value) is str:
                 if cell.value.replace(".", "", 1).isnumeric():
                     cell.value = float(cell.value)
