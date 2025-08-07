@@ -2,3 +2,5 @@ input/
 output/
 toDo.txt
 .vscode/
+benchmark.py
+__pycache__/
