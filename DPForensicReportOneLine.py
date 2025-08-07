@@ -23,7 +23,7 @@ maxWidth=64
 ColorAlternateRows = True
 fillColor = 'F0F0F0F0'
 hideEmptyColumns = True
-DataHeaders = ["S.No","Start Time","End Time","Device IP Address","Threat Category","Attack Name","Policy Name","Action","Attack ID","Source IP Address","Source Port","Destination IP Address","Destination Port","Direction","Protocol","Radware ID","Duration","Total Packets","Total Packets Dropped","Packet Type","Total Mbits","Total Mbits Dropped","Max pps","Max bps","Physical Port","Risk","VLAN Tag","Footprint"]
+DataHeaders = ["S.No","Start Time","End Time","Device IP Address","Threat Category","Attack Name","Policy Name","Action","Attack ID","Source IP Address","Source Port","Destination IP Address","Destination Port","Direction","Protocol","Radware ID","Duration","Total Packets","Total Packets Dropped","Packet Type","Total Mbits","Total Mbits Dropped","Max pps","Max bps","Max Attack Rate in Kb","Physical Port","Risk","VLAN Tag","Footprint","Device Name","Device Type","Workflow Rule Process","Activation Id","Protected Object"]
 
 def rowSearch(rowStr,entry):
     try:
@@ -237,12 +237,12 @@ def processData(rawData):
                 try:
                     #Columns B and C are dates. Lets convert it to a proper date format.
                     cell = sheet.cell(row=curRow,column=i)
-                    # Parse the date time string to a datetime object
-                    datetime_obj = datetime.strptime(cell.value, "%m.%d.%Y %H:%M:%S")
-                    # Convert the datetime object to the desired format
-                    cell.number_format = "YYYY-MM-DD HH:MM:SS"
-                    cell.value = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
-                    
+                    if cell.value:
+                        # Parse the date time string to a datetime object
+                        datetime_obj = datetime.strptime(cell.value, "%d.%m.%Y %H:%M:%S")
+                        # Convert the datetime object to the desired format
+                        cell.number_format = "YYYY-MM-DD HH:MM:SS"
+                        cell.value = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
                 except:
                     pass
         #Output current progress once per hundred entried processed
@@ -317,8 +317,10 @@ if not os.path.exists(output_path):
     os.makedirs(output_path)
 
 for path, dir, files in os.walk(input_path):
+    if path in ['./input/noprocess','./input/ignore','./input/old']:
+        continue
     if len(files) == 0:
-        print("Please place DefenseProForensicReport.csv files in the .\input\ folder and rerun the script.")
+        print("Please place DefenseProForensicReport.csv files in the ./input/ folder and rerun the script.")
     for file in files:
         if file.endswith(".tgz") or file.endswith(".zip"):
             try:

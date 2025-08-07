@@ -38,6 +38,9 @@
 		Err5 - Non-numeric data in column A. (Column A should always contain a S.No)
 
 # Version control
+	V1.3 - Bugfix
+		* Additional colums added ('Max Attack Rate in Kb', 'Device Name', 'Device Type', 'Workflow Rule Process', 'Activation Id', 'Protected Object').
+		* Corrected an error with date processing.
 	V1.2 - CC10.5 Update
 		* Included 'Total Packets' and 'Total Mbits' columns from CC10.5. These columns were added in the middle of the output document. Some columns will have shifted to the right as a result.
 		* Multiple modifications to make it easier to add additional new columns in the future.
